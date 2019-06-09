@@ -9,17 +9,19 @@
 filename=`basename pwd`
 current=`pwd`
 bname=`basename "$current"`
-find . -maxdepth 2 -iname '*.mp4' | xargs -L 1 echo | awk '{printf "file \x27%s\x27\n", $0}' >> list.txt
-find . -maxdepth 2 -iname '*.mp4' | xargs -L 1 echo | awk '{print $0}' >> files.txt
+bname_mp4="$bname.mp4"
+bname_meta="$bname-meta.mp4"
+find . -maxdepth 2 -iname '*.mp4' | xargs -L 1 echo | awk '{printf "file \x27%s\x27\n", $0}' | sort >> list.txt
+find . -maxdepth 2 -iname '*.mp4' | xargs -L 1 echo | awk '{print $0}' | sort >> files.txt
 echo -n "Merging the files"
-ffmpeg -f concat -safe 0 -i list.txt -c copy "$bname.mp4" -v quiet
+ffmpeg -f concat -safe 0 -i list.txt -c copy $bname_mp4 -v quiet
 echo "..........[ DONE ]"
 
 ## extract meta
 # ffmpeg -i all.mp4 -f ffmetadata metafile
 metafile="metadata.txt"
 echo -n "Extracting meta data"
-ffmpeg -i "$bname.mp4" -f ffmetadata $metafile -v quiet
+ffmpeg -i $bname_mp4 -f ffmetadata $metafile -v quiet
 echo "..........[ DONE ]"
 
 ## chapter marks
@@ -43,13 +45,14 @@ echo "..........[ DONE ]"
 
 echo -n "Adding chapter meta "
 
-ffmpeg -i "$bname.mp4" -i $metafile -map_metadata 1 -codec copy "$bname-meta.mp4" -v quiet
+ffmpeg -i $bname_mp4 -i $metafile -map_metadata 1 -codec copy $bname_meta -v quiet
 echo "..........[ DONE ]"
 
 ## cleanup
 echo -n "Cleaning up"
 
-rm files.txt list.txt $metafile
+rm files.txt list.txt $bname_mp4 $metafile
+mv $bname_meta $bname_mp4
 
 echo "..........[ DONE ]"
 
